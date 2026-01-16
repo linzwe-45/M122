@@ -34,6 +34,7 @@ except FileNotFoundError:
 all_results = []
 
 #Iterate through each search term in InputM122.txt
+pages_to_scrape = 1  # Number of pages to scrape per search
 
 for term in search_terms:
     try: 
