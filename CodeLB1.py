@@ -8,9 +8,9 @@ import pandas as pd
 import mysql.connector
 
 # Suchmaschine auswählen
-USE_GOOGLE = True
+USE_GOOGLE = False
 USE_BING = False
-USE_DUCKDUCKGO = False
+USE_DUCKDUCKGO = True
 
 # URL-Vorlagen für jede Suchmaschine
 SEARCH_ENGINES = {
@@ -82,33 +82,74 @@ for term in search_terms:
         page_html = driver.page_source
         soup = BeautifulSoup(page_html, 'html.parser')
         
+        # Je nach Suchmaschine unterschiedliche Parsing-Logik
+        if current_engine.lower() == "google":
+            container = soup.find("div", {"class":"dURPMd"})
+            if container:
+                allData = container.find_all("div", {"class":"Ww4FFb"})
+            else:
+                allData = []
+        elif current_engine.lower() == "bing":
+            allData = soup.find_all("li", {"class":"b_algo"})
+        elif current_engine.lower() == "duckduckgo":
+            allData = soup.find_all("div", {"class":"result_body"})
+        else:
+            allData = []
+
         obj = {}
         l = []
 
-        allData = soup.find("div", {"class":"dURPMd"}).find_all("div", {"class":"Ww4FFb"})
+        #allData = soup.find("div", {"class":"dURPMd"}).find_all("div", {"class":"Ww4FFb"})
         print(len(allData))
+        for entry in allData:
+            obj = {}
 
-        for i in range(len(allData)):
-            try:
-                obj["title"] = allData[i].find("h3").text
-            except:
-                obj["title"] = None
+            if current_engine.lower() == "google":
+                try:
+                    obj["title"] = entry.find("h3").text
+                except:
+                    obj["title"] = None
+                try:
+                    obj["link"] = entry.find("a").get('href')
+                except:
+                    obj["link"] = None
+                try:
+                    obj["description"] = entry.find("div", {"class":"VwiC3b"}).text
+                except:
+                    obj["description"] = None
 
-            try:
-                obj["link"] = allData[i].find("a").get('href')
-            except:
-                obj["link"] = None
+            elif current_engine.lower() == "bing":
+                try:
+                    obj["title"] = entry.find("h2").text
+                except:
+                    obj["title"] = None
+                try:
+                    obj["link"] = entry.find("a").get('href')
+                except:
+                    obj["link"] = None
+                try:
+                    obj["description"] = entry.find("p").text if entry.find("p") else None
+                except:
+                    obj["description"] = None
 
-            try:
-                obj["description"] = allData[i].find("div", {"class":"VwiC3b"}).text
-            except:
-                obj["description"] = None
+            elif current_engine.lower() == "duckduckgo":
+                try:
+                    obj["title"] = entry.find("a", {"class":"result__a"}).text
+                except:
+                    obj["title"] = None
+                try:
+                    obj["link"] = entry.find("a", {"class":"result__a"}).get('href')
+                except:
+                    obj["link"] = None
+                try:
+                    obj["description"] = entry.find("a", {"class":"result__snippet"}).text
+                except:
+                    obj["description"] = None
 
             obj["search_term"] = term # Add search term to the object
             obj["search_engine"] = current_engine
 
             l.append(obj)
-            obj = {}
             
         all_results.extend(l) # Collect results from all search terms
     except Exception as e:
