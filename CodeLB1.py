@@ -92,7 +92,7 @@ for term in search_terms:
         elif current_engine.lower() == "bing":
             allData = soup.find_all("li", {"class":"b_algo"})
         elif current_engine.lower() == "duckduckgo":
-            allData = soup.find_all("div", {"class":"result_body"})
+            allData = soup.find_all("article", {"data-testid": "result"})
         else:
             allData = []
 
@@ -134,15 +134,17 @@ for term in search_terms:
 
             elif current_engine.lower() == "duckduckgo":
                 try:
-                    obj["title"] = entry.find("a", {"class":"result__a"}).text
+                    title_tag = entry.find("a", {"data-testid": "result-title-a"})
+                    obj["title"] = title_tag.get_text() if title_tag else None
                 except:
                     obj["title"] = None
                 try:
-                    obj["link"] = entry.find("a", {"class":"result__a"}).get('href')
+                    obj["link"] = title_tag.get('href') if title_tag else None
                 except:
                     obj["link"] = None
                 try:
-                    obj["description"] = entry.find("a", {"class":"result__snippet"}).text
+                    obj["description"] = desc_tag = entry.find("div", {"data-testid": "result-snippet"})
+                    obj["description"] = desc_tag.get_text() if desc_tag else None
                 except:
                     obj["description"] = None
 
@@ -159,7 +161,7 @@ for term in search_terms:
 # Save all results to a single CSV file
 try: 
     df = pd.DataFrame(all_results)
-    df.to_csv('google_multiple.csv', index=False, encoding='utf-8')
+    df.to_csv('search_results.csv', index=False, encoding='utf-8')
 except Exception as e:
     print(f"Fehler beim Speichern der CSV-Datei: {e}")
 
