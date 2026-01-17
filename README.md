@@ -5,7 +5,7 @@ Dieses Python-Programm automatisiert die Suche über verschiedene Suchmaschinen 
 ---
 
 ## Funktionen
-* **Multi-Engine Support:** Flexibles Scraping von Google, Bing oder DuckDuckGo (einstellbar via Flags).
+* **Multi-Engine Support:** Scraping von Google, Bing oder DuckDuckGo (einstellbar via Flags).
 * **Batch-Verarbeitung:** Suchbegriffe werden automatisch aus einer lokalen Textdatei gelesen.
 * **Dynamisches Scraping:** Nutzung von Selenium zur Erfassung von Inhalten, die per JavaScript geladen werden.
 * **Duale Datenspeicherung:**
@@ -53,15 +53,17 @@ Engine auswählen
 * Im Kopfbereich des Skripts die gewünschte Suchmaschine auswählen, indem du den Wert auf True setzt:
 
 ```Python
-USE_GOOGLE = False
+USE_GOOGLE = True  # Beispiel: Google ist aktiv
 USE_BING = False
-USE_DUCKDUCKGO = True  # Beispiel: DuckDuckGo ist aktiv
+USE_DUCKDUCKGO = False  
 ```
 ---
 ## Benutzung
 * Server starten: Stelle sicher, dass dein MySQL/MariaDB-Dienst läuft.
 
 * Input vorbereiten: Überprüfe, ob die InputM122.txt befüllt ist.
+
+![Input Beispiel](img/Inputexample.png)
 
 * Skript ausführen:
 
@@ -70,11 +72,11 @@ python dein_skriptname.py
 ```
 * Ergebnisse prüfen:
     - Die Konsole zeigt die Anzahl der gefundenen Ergebnisse an.
+    ![Konsole Output](img/terminal.png)
     - Die Datei search_results.csv wird im selben Ordner erstellt/aktualisiert.
+    ![CSV Output](img/csvout.png)
     - Die Datenbank M122_results und die Tabelle search_results werden automatisch befüllt.
+    ![Datenbank Ausgabe](img/dboutput.png)
 ---
 # Autor
 **Lina Zweifel**
-
-
-Beispiel Input & Output

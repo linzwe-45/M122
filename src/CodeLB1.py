@@ -7,10 +7,10 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import mysql.connector
 
-# Suchmaschine auswählen
-USE_GOOGLE = False
+# Suchmaschine auswählen (Flag setzen)
+USE_GOOGLE = True
 USE_BING = False
-USE_DUCKDUCKGO = True
+USE_DUCKDUCKGO = False
 
 # URL-Vorlagen für jede Suchmaschine
 SEARCH_ENGINES = {
@@ -30,14 +30,13 @@ else:
     current_engine = "Unknown"
 
 # Funktion, um die aktive Suchmaschine zu ermitteln
-def get_search_url(query, page=0):
-    start = page * 10  # Position für Pagination
+def get_search_url(query):
     if USE_GOOGLE:
-        return SEARCH_ENGINES["google"].format(query=query.replace(" ", "+"), start=start)
+        return SEARCH_ENGINES["google"].format(query=query.replace(" ", "+"), start=0)
     elif USE_BING:
-        return SEARCH_ENGINES["bing"].format(query=query.replace(" ", "+"), start=start+1)
+        return SEARCH_ENGINES["bing"].format(query=query.replace(" ", "+"), start=1)
     elif USE_DUCKDUCKGO:
-        return SEARCH_ENGINES["duckduckgo"].format(query=query.replace(" ", "+"), start=start)
+        return SEARCH_ENGINES["duckduckgo"].format(query=query.replace(" ", "+"), start=0)
     else:
         raise ValueError("Keine Suchmaschine ausgewählt!")
 
@@ -56,7 +55,7 @@ except Exception as e:
     exit(1)
     
     
-# Open Google Search URL
+# Öffnet InputM122.txt und liest Suchbegriffe ein
 try: 
     with open("./data/InputM122.txt", "r", encoding="utf-8") as f:
         search_terms = [line.strip() for line in f if line.strip()]  # leere Zeilen ignorieren
@@ -67,17 +66,16 @@ except FileNotFoundError:
     
 all_results = []
 
-#Iterate through each search term in InputM122.txt
-pages_to_scrape = 1  # Number of pages to scrape per search
+pages_to_scrape = 1  # Anzahl Seiten die gelesen werden pro Suchbegriff
 
+# Schleife durch Suchbegriffe
 for term in search_terms:
     try: 
         print(f"Suche: {term}")
-        search_url = get_search_url(term, page=0) #page= 0 for first page
-        #search_url = f"https://www.google.com/search?q={term.replace(' ', '+')}"
+        search_url = get_search_url(term)
         driver.get(search_url)
         
-        time.sleep(2) # Wait for the page to load
+        time.sleep(2) # Warten bis Seite lädt
 
         page_html = driver.page_source
         soup = BeautifulSoup(page_html, 'html.parser')
@@ -98,8 +96,8 @@ for term in search_terms:
 
         obj = {}
         l = []
-
-        #allData = soup.find("div", {"class":"dURPMd"}).find_all("div", {"class":"Ww4FFb"})
+        
+        # Daten extrahieren
         print(len(allData))
         for entry in allData:
             obj = {}
@@ -148,27 +146,27 @@ for term in search_terms:
                 except:
                     obj["description"] = None
 
-            obj["search_term"] = term # Add search term to the object
+            obj["search_term"] = term # Suchbegriff speichern im Ergebnis
             obj["search_engine"] = current_engine
 
             l.append(obj)
             
-        all_results.extend(l) # Collect results from all search terms
+        all_results.extend(l) # Sammelt alle Resultate 
     except Exception as e:
         print(f"Fehler beim Scraping von '{term}': {e}")
-        continue # Try Continue with the next search term
+        continue # Versuch mit nächstem Begriff
     
-# Save all results to a single CSV file
+# Resultate in CSV speichern
 try: 
     df = pd.DataFrame(all_results)
     df.to_csv('./data/search_results.csv', index=False, encoding='utf-8')
 except Exception as e:
     print(f"Fehler beim Speichern der CSV-Datei: {e}")
 
-##################################################################3
-# Load data into MySQL database MariaDB
+##################################################################
+# Daten in MySQL Datenbank speichern
 
-# Connect to the database/ server
+# Verbindung zu Datenbank herstellen
 try: 
     conn = mysql.connector.connect(
         host="localhost",
@@ -177,12 +175,12 @@ try:
     )
     cursor = conn.cursor()
 
-    # Create database and table if not exists
+    # Datenbank erstellen
     cursor.execute("CREATE DATABASE IF NOT EXISTS M122_results")
     conn.commit()
-    # Switch to the database
+    # Datenbank auswählen
     conn.database = "M122_results"
-    # Create table
+    # Tabelle erstellen
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS search_results (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -194,7 +192,7 @@ try:
     );
     """)
     conn.commit()
-
+    # Tabellen mit Daten befüllen
     for _, row in df.iterrows():
         try: 
             cursor.execute("""
